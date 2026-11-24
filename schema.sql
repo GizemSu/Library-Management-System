@@ -1,3 +1,4 @@
+-- Library Management System Database Schema
 -- Each book row represents one physical copy.
 CREATE TABLE IF NOT EXISTS members (
     member_id INTEGER PRIMARY KEY,
