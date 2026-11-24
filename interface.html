@@ -1,0 +1,372 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Library Management System</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f6f8;
+      color: #24334c;
+    }
+
+    .sidebar {
+      width: 220px;
+      height: 100vh;
+      position: fixed;
+      background: #202f50;
+      color: white;
+      padding: 25px 15px;
+      box-sizing: border-box;
+    }
+
+    .sidebar h2 {
+      color: #e5cfaa;
+      margin-bottom: 35px;
+    }
+
+    .sidebar button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: transparent;
+      color: white;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sidebar button:hover {
+      background: #354869;
+    }
+
+    main {
+      margin-left: 220px;
+      padding: 35px;
+    }
+
+    h1 {
+      font-family: Georgia, serif;
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      margin: 25px 0;
+    }
+
+    .stat {
+      flex: 1;
+      padding: 20px;
+      background: white;
+      border: 1px solid #e3e7ee;
+      border-radius: 5px;
+    }
+
+    .stat h2 {
+      margin-bottom: 0;
+    }
+
+    .panel {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border: 1px solid #e3e7ee;
+      border-radius: 5px;
+    }
+
+    input, select {
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #dce2e9;
+      border-radius: 4px;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background: #202f50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #354869;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #e3e7ee;
+    }
+
+    th {
+      background: #f5f6f8;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    .available {
+      color: #34755c;
+    }
+
+    .loan {
+      color: #b45542;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="sidebar">
+    <h2>LIBRARY DESK</h2>
+
+    <button onclick="showPage('books')">Book Catalog</button>
+    <button onclick="showPage('loans')">Loans & Returns</button>
+    <button onclick="showPage('members')">Members</button>
+    <button onclick="showPage('reports')">Reports</button>
+
+    <p>Library Management System</p>
+    <small>Gizem Su Kaplan</small>
+  </div>
+
+  <main>
+    <h1>Library Management</h1>
+    <p>Manage books, members and borrowing records.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <p>Total Books</p>
+        <h2 id="totalBooks">0</h2>
+      </div>
+
+      <div class="stat">
+        <p>Available Books</p>
+        <h2 id="availableBooks">0</h2>
+      </div>
+
+      <div class="stat">
+        <p>Active Loans</p>
+        <h2 id="activeLoans">0</h2>
+      </div>
+    </div>
+
+    <!-- BOOK CATALOG -->
+    <section id="books" class="page active">
+      <div class="panel">
+        <h2>Book Catalog</h2>
+
+        <input id="bookTitle" placeholder="Book title">
+        <input id="bookAuthor" placeholder="Author">
+        <button class="btn" onclick="addBook()">Add Book</button>
+
+        <p>
+          <input id="searchBook" placeholder="Search books"
+                 oninput="displayBooks()">
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Author</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="bookTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- LOANS -->
+    <section id="loans" class="page">
+      <div class="panel">
+        <h2>Loans & Returns</h2>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Member</th>
+              <th>Due date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="loanTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- MEMBERS -->
+    <section id="members" class="page">
+      <div class="panel">
+        <h2>Members</h2>
+
+        <input id="memberName" placeholder="Member name">
+        <input id="memberEmail" type="email" placeholder="Email">
+        <button class="btn" onclick="addMember()">Add Member</button>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+            </tr>
+          </thead>
+          <tbody id="memberTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="reports" class="page">
+      <div class="panel">
+        <h2>Library Reports</h2>
+        <p id="reportText"></p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let state = { books: [], members: [], loans: [], stats: {}, popular: [] };
+    const el = id => document.getElementById(id);
+
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+      el(name).classList.add('active');
+    }
+
+    async function loadState() {
+      const response = await fetch('/api/state', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Could not load library data.');
+      state = await response.json();
+      updateDisplay();
+    }
+
+    async function save(path, data) {
+      try {
+        await loadState();
+        const response = await fetch(path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Library-Token': state.token },
+          body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Request failed.');
+        await loadState();
+        return true;
+      } catch (error) {
+        alert(error.message);
+        return false;
+      }
+    }
+
+    async function addBook() {
+      const title = el('bookTitle').value.trim();
+      const author = el('bookAuthor').value.trim();
+      if (!title || !author) return alert('Please enter book information.');
+      if (await save('/api/books', { title, author })) {
+        el('bookTitle').value = '';
+        el('bookAuthor').value = '';
+      }
+    }
+
+    async function addMember() {
+      const name = el('memberName').value.trim();
+      const email = el('memberEmail').value.trim();
+      if (!name || !email.includes('@')) return alert('Please enter a valid name and email.');
+      if (await save('/api/members', { name, email })) {
+        el('memberName').value = '';
+        el('memberEmail').value = '';
+      }
+    }
+
+    async function borrowBook(bookId) {
+      if (!state.members.length) return alert('Please add a member first.');
+      const choice = prompt('Enter member ID:\n' + state.members.map(m => m.id + ': ' + m.name).join('\n'));
+      if (choice === null) return;
+      const memberId = Number(choice);
+      if (!state.members.some(m => m.id === memberId)) return alert('Member not found.');
+      const due = prompt('Due date (YYYY-MM-DD):', state.today);
+      if (!due) return;
+      await save('/api/borrow', { member_id: memberId, book_ids: [bookId], due_on: due });
+    }
+
+    async function returnBook(loanId) {
+      await save('/api/return', { loan_ids: [loanId] });
+    }
+
+    function makeRow(table, values) {
+      const row = table.insertRow();
+      values.forEach(value => { row.insertCell().textContent = value; });
+      return row;
+    }
+
+    function action(row, label, handler, disabled = false) {
+      const button = document.createElement('button');
+      button.className = 'btn';
+      button.textContent = label;
+      button.disabled = disabled;
+      button.onclick = handler;
+      row.insertCell().appendChild(button);
+    }
+
+    function displayBooks() {
+      const table = el('bookTable');
+      const search = el('searchBook').value.trim().toLowerCase();
+      table.textContent = '';
+      state.books.forEach(book => {
+        if (!book.title.toLowerCase().startsWith(search) && !book.author.toLowerCase().startsWith(search)) return;
+        const available = book.status === 'Available';
+        const row = makeRow(table, [book.id, book.title, book.author, book.status]);
+        row.cells[3].className = available ? 'available' : 'loan';
+        action(row, available ? 'Borrow' : 'On Loan', () => borrowBook(book.id), !available);
+      });
+    }
+
+    function updateDisplay() {
+      displayBooks();
+      el('memberTable').textContent = '';
+      state.members.forEach(m => makeRow(el('memberTable'), [m.id, m.name, m.email]));
+      el('loanTable').textContent = '';
+      state.loans.forEach(loan => {
+        const row = makeRow(el('loanTable'), [loan.title, loan.member, loan.due, loan.returned ? 'Returned' : (loan.due < state.today ? 'Overdue' : 'Active')]);
+        if (!loan.returned) action(row, 'Return', () => returnBook(loan.id));
+        else row.insertCell();
+      });
+      el('totalBooks').textContent = state.stats.books;
+      el('availableBooks').textContent = state.books.filter(b => b.status === 'Available').length;
+      el('activeLoans').textContent = state.stats.active;
+      el('reportText').textContent = 'Total books: ' + state.stats.books +
+        ' | Total members: ' + state.stats.members + ' | Total loans: ' + state.loans.length +
+        ' | Overdue: ' + state.stats.overdue + ' | Most borrowed: ' +
+        (state.popular.length && state.popular[0].total > 0 ? state.popular[0].title : 'None');
+    }
+
+    loadState().catch(error => alert(error.message));
+  </script>
+
+</body>
+</html>
